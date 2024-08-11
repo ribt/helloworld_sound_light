@@ -1,0 +1,93 @@
+openapi: 3.0.0
+info:
+  title: LumRPi API
+  version: 1.0.0
+servers:
+  - url: http://{{base_url}}
+paths:
+  /status:
+    get:
+      tags:
+        - default
+      summary: Get status
+      description: >-
+        Récupère le statut de toutes les tables (animation en cours ou non) et
+        les infos sur le round en cours
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /flag:
+    post:
+      tags:
+        - default
+      summary: Jouer flag
+      description: >-
+        Jouer le son "L'équipe n°X vient de marquer X points." et allumer le
+        bandeau de l'équipe en vert.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                table: 1
+                points: 20
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /box:
+    post:
+      tags:
+        - default
+      summary: Pwn box
+      description: >-
+        Jouer le son "L'équipe n°X vient pwn la box !", allumer le bandeau de
+        l'équipe en vert et les autres en rouge.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                table: 1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /round:
+    post:
+      tags:
+        - default
+      summary: Démarrer un round
+      description: >-
+        - Jouer le son "Début du round n°X"
+            
+        - Faire une animation de début de round
+            
+        - Prévenir (animation + son) quand il reste 5 min
+            
+        - Prévenir (animation + son) quand il reste 1 min
+            
+        - Le paramètre _duration_ est la durée du round en minutes
+            
+        - Le paraètre _color_ est une couleur (en html hexa) qui définit la
+        couleur de l'animation "au repos" durant ce round.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                round: 1
+                duration: 30
+                color: '#ff0000'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}

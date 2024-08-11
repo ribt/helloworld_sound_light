@@ -1,0 +1,10 @@
+tables: 20
+table_size: 60
+messages:
+  flag: "L'équipe %tn vient marque %fs points."
+  box: "L'équipe %tn vient de terminer la box !"
+  round_start: "Début du round numéro %rn"
+  round_stop: "Fin du round numéro %rn"
+rounds_time_messages:
+  300: "Il reste 5 minutes !"
+  60: "Plus qu'une minute !"
