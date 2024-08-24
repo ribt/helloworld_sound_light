@@ -33,10 +33,12 @@ class TableState():
 
 table_states = [TableState(Animation.IDLE) for _ in range(NUMB_TABLES)]
 
-def decreaseBrigthness(color, coefficient):
-    r = int(color.r * coefficient) & 255
-    g = int(color.g * coefficient) & 255
-    b = int(color.b * coefficient) & 255
+def decreaseBrightness(color, coefficient):
+    assert coefficient >= 0 and coefficient <= 1
+
+    r = int(color.r * coefficient)
+    g = int(color.g * coefficient)
+    b = int(color.b * coefficient)
 
     return Color(r, g, b)
 
@@ -54,7 +56,7 @@ def range_anim(tick):
     colors = [Color(0, 255, 0) for _ in range(tick//20)] + [Color(0, 0, 0) for _ in range(TABLE_SIZE - tick//20)]
     return colors
 
-def computePixels(state: TableState):
+def computeTablePixels(state: TableState):
     ret = None
     if state.getAnimation() == Animation.FLAG:
         ret = point_anim(state.getTick())
@@ -63,27 +65,41 @@ def computePixels(state: TableState):
     state.tick()
     return ret
 
+def adaptBrightnessToMaxCurrent(pixels):
+    for table in range(NUMB_TABLES):
+        estimated_current = 0
+        tablePixels = pixels[table*TABLE_SIZE:(table+1)*TABLE_SIZE]
+        for pixel in tablePixels:
+            estimated_current += (pixel.r + pixel.g + pixel.b) / (255*3) * PIXEL_MAX_CURRENT
+        if estimated_current > TABLE_MAX_CURRENT:
+            ratio = TABLE_MAX_CURRENT / estimated_current
+            for i in range(len(tablePixels)):
+                pixels[table*TABLE_SIZE+i] = decreaseBrightness(tablePixels[i], ratio)
+
 def loop():
     tick = 0
     coefficients = [randint(1, 100)/100 for _ in range(strip.numPixels())]
     while True:
         # Fill pixels with idle animation
         if tick % 10 == 0:
+            tick = 0
             coefficients = [coefficients[-1]] + coefficients[:-1]
         for i in range(len(coefficients)):
             coefficients[i] = coefficients[i] + randint(-50, 50)/1000
             coefficients[i] = max(0.3, min(0.9, coefficients[i]))
-        pixels = [decreaseBrigthness(MAIN_COLOR, coefficient) for coefficient in coefficients]
+        pixels = [decreaseBrightness(MAIN_COLOR, coefficient) for coefficient in coefficients]
 
         # Override pixels with table animations
         for table in range(NUMB_TABLES):
             if table_states[table].getAnimation() == Animation.IDLE:
                 continue
-            tablePixels = computePixels(table_states[table])
+            tablePixels = computeTablePixels(table_states[table])
             if tablePixels is None:
                 table_states[table] = TableState(Animation.IDLE)
                 continue
             pixels = pixels[:table*TABLE_SIZE] + tablePixels + pixels[(table+1)*TABLE_SIZE:]
+
+        adaptBrightnessToMaxCurrent(pixels)
 
         # Set pixels
         for i in range(len(pixels)):
