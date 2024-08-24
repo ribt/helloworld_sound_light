@@ -17,7 +17,21 @@ class Animation(Enum):
     FLAG = 2
     ROUND = 3
 
-table_states = [Animation.IDLE, Animation.FLAG, Animation.ROUND]
+class TableState():
+    def __init__(self, animation: Animation, tick=0):
+        self._animation = animation
+        self._tick = tick
+
+    def tick(self):
+        self._tick += 1
+    
+    def getAnimation(self):
+        return self._animation
+
+    def getTick(self):
+        return self._tick
+
+table_states = [TableState(Animation.IDLE) for _ in range(NUMB_TABLES)]
 
 def decreaseBrigthness(color, coefficient):
     r = int(color.r * coefficient) & 255
@@ -27,59 +41,79 @@ def decreaseBrigthness(color, coefficient):
     return Color(r, g, b)
 
 
-def point_anim(tick, prevPixels):
+def point_anim(tick):
     if tick >= TABLE_SIZE * 10:
         return None
     colors = [Color(0, 0, 0) for _ in range(TABLE_SIZE)]
     colors[tick//10] = Color(255, 0, 0)
     return colors
 
-def range_anim(tick, prevPixels):
+def range_anim(tick):
     if tick >= TABLE_SIZE * 20:
         return None
     colors = [Color(0, 255, 0) for _ in range(tick//20)] + [Color(0, 0, 0) for _ in range(TABLE_SIZE - tick//20)]
     return colors
 
-def idle_anim(tick, prevPixels):
-    if tick == 0:
-        return [MAIN_COLOR for _ in range(TABLE_SIZE)]
-    for i in range(TABLE_SIZE):
-        prevCoefficient = prevPixels[i].r / MAIN_COLOR.r
-        newCoefficient = prevCoefficient + randint(-500, 500)/1000
-        newCoefficient = max(0.3, min(0.9, newCoefficient))
-        prevPixels[i] = decreaseBrigthness(MAIN_COLOR, newCoefficient)
-    if tick % 10 == 0:
-        prevPixels = [prevPixels[-1]] + prevPixels[:-1]
-    return prevPixels
-
-def computePixels(tick, prevPixels, state):
-    if state == Animation.IDLE:
-        return idle_anim(tick, prevPixels)
-    elif state == Animation.FLAG:
-        return point_anim(tick, prevPixels)
-    elif state == Animation.ROUND:
-        return range_anim(tick, prevPixels)
+def computePixels(state: TableState):
+    ret = None
+    if state.getAnimation() == Animation.FLAG:
+        ret = point_anim(state.getTick())
+    elif state.getAnimation() == Animation.ROUND:
+        ret = range_anim(state.getTick())
+    state.tick()
+    return ret
 
 def loop():
     tick = 0
-    prevPixels = [Color(0, 0, 0) for _ in range(NUMB_TABLES*TABLE_SIZE)]
+    coefficients = [randint(1, 100)/100 for _ in range(strip.numPixels())]
     while True:
-        pixels = []
+        # Fill pixels with idle animation
+        if tick % 10 == 0:
+            coefficients = [coefficients[-1]] + coefficients[:-1]
+        for i in range(len(coefficients)):
+            coefficients[i] = coefficients[i] + randint(-50, 50)/1000
+            coefficients[i] = max(0.3, min(0.9, coefficients[i]))
+        pixels = [decreaseBrigthness(MAIN_COLOR, coefficient) for coefficient in coefficients]
+
+        # Override pixels with table animations
         for table in range(NUMB_TABLES):
-            tablePixels = computePixels(tick, prevPixels[table*TABLE_SIZE:(table+1)*TABLE_SIZE], table_states[table])
+            if table_states[table].getAnimation() == Animation.IDLE:
+                continue
+            tablePixels = computePixels(table_states[table])
             if tablePixels is None:
-                table_states[table] = Animation.IDLE
-                tablePixels = [MAIN_COLOR for _ in range(TABLE_SIZE)]
-            pixels += tablePixels
+                table_states[table] = TableState(Animation.IDLE)
+                continue
+            pixels = pixels[:table*TABLE_SIZE] + tablePixels + pixels[(table+1)*TABLE_SIZE:]
+
+        # Set pixels
         for i in range(len(pixels)):
             strip.setPixelColor(i, pixels[i])
-
-
         strip.show()
+
         sleep(0.01)
         tick += 1
 
-# t = Thread(target=loop)
-# t.start()
+app = flask.Flask(__name__)
 
-loop()
+@app.route('/status', methods=['GET'])
+def status():
+    return flask.jsonify([state.getAnimation().name for state in table_states])
+
+@app.route('/flag', methods=['POST'])
+def flag():
+    global table_states
+    body = flask.request.get_json()
+    table_states[body["table"]] = TableState(Animation.FLAG)
+    return 'OK'
+
+@app.route('/box', methods=['POST'])
+def box_pwned():
+    global table_states
+    body = flask.request.get_json()
+    table_states[body["table"]] = TableState(Animation.ROUND)
+    return 'OK'
+
+if __name__ == '__main__':
+    thread = Thread(target=loop)
+    thread.start()
+    app.run(debug=False, host='0.0.0.0', port=80)
