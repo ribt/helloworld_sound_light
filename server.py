@@ -13,7 +13,7 @@ TOTAL_PIXELS = NUMB_TABLES * TABLE_SIZE
 class Animation(Enum):
     IDLE = 1
     FLAG = 2
-    ROUND = 3
+    PWNED = 3
 
 class TableState():
     def __init__(self, animation: Animation, tick=0):
@@ -36,27 +36,37 @@ def decreaseBrightness(color, coefficient):
     b = int(color.b * coefficient)
     return Color(r, g, b)
 
-def point_anim(tick):
-    if tick >= TABLE_SIZE * 10:
-        return None
-    colors = [Color(0, 0, 0) for _ in range(TABLE_SIZE)]
-    colors[tick//10] = Color(255, 0, 0)
-    return colors
+def wheel(pos):
+    """Generate rainbow colors across 0-255 positions."""
+    if pos < 85:
+        return Color(pos * 3, 255 - pos * 3, 0)
+    elif pos < 170:
+        pos -= 85
+        return Color(255 - pos * 3, 0, pos * 3)
+    else:
+        pos -= 170
+        return Color(0, pos * 3, 255 - pos * 3)
 
-def range_anim(tick):
-    if tick >= TABLE_SIZE * 20:
-        return None
-    colors = [Color(0, 255, 0) for _ in range(tick//20)] + [Color(0, 0, 0) for _ in range(TABLE_SIZE - tick//20)]
-    return colors
 
-def computeTablePixels(state: TableState, reversed=False):
+def rainbow(colors=[wheel(i) for i in range(256)]):
+    colors.insert(0, colors.pop())
+    step = max(256 // TABLE_SIZE, 1)
+    return [colors[(i*step)%256] for i in range(TABLE_SIZE)]
+
+def flag_anim(tick):
+    if tick >= TABLE_SIZE * 5:
+        return None
+    pixels = [Color(0, 255, 0) for _ in range(tick//5)] + [Color(0, 0, 0) for _ in range(TABLE_SIZE - tick//5)]
+    return pixels
+
+def computeTablePixels(state: TableState, reverse=False):
     ret = None
     if state.getAnimation() == Animation.FLAG:
-        ret = point_anim(state.getTick())
-    elif state.getAnimation() == Animation.ROUND:
-        ret = range_anim(state.getTick())
-    state.tick()
-    if reversed and ret is not None:
+        ret = flag_anim(state.getTick())
+        state.tick()
+    elif state.getAnimation() == Animation.PWNED:
+        ret = rainbow()
+    if reverse and ret is not None:
         ret = ret[::-1]
     return ret
 
@@ -65,7 +75,7 @@ def adaptBrightnessToMaxCurrent(pixels):
         estimated_current = 0
         tablePixels = pixels[table*TABLE_SIZE:(table+1)*TABLE_SIZE]
         for pixel in tablePixels:
-            estimated_current += (pixel.r + pixel.g + pixel.b) / (255*3) * PIXEL_MAX_CURRENT
+            estimated_current += (pixel.r + pixel.g + pixel.b) / (255*3) * PIXEL_MAX_CURRENT * LED_BRIGHTNESS/255
         if estimated_current > TABLE_MAX_CURRENT:
             ratio = TABLE_MAX_CURRENT / estimated_current
             for i in range(len(tablePixels)):
@@ -87,7 +97,7 @@ def animateTables(pixels):
     for table in range(NUMB_TABLES):
         if table_states[table].getAnimation() == Animation.IDLE:
             continue
-        tablePixels = computeTablePixels(table_states[table], reversed=(table%2==1))
+        tablePixels = computeTablePixels(table_states[table], reverse=(table%2==1))
         if tablePixels is None:
             table_states[table] = TableState(Animation.IDLE)
             continue
@@ -127,7 +137,7 @@ def flag():
 def box_pwned():
     global table_states
     body = flask.request.get_json()
-    table_states[body["table"]] = TableState(Animation.ROUND)
+    table_states[body["table"]] = TableState(Animation.PWNED)
     return 'OK'
 
 if __name__ == '__main__':
