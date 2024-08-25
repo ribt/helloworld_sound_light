@@ -1,5 +1,5 @@
 import yaml
-from time import sleep
+from time import sleep, time
 from random import randint
 import flask
 from rpi_ws281x import PixelStrip, Color
@@ -111,20 +111,41 @@ def showPixels(strip, pixels):
     strip.show()
 
 def stripControl():
+    global forcedColor
     strip = PixelStrip(TOTAL_PIXELS, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
     strip.begin()
 
     while True:
-        pixels = idleAnimation()
-        animateTables(pixels)
-        showPixels(strip, pixels)
+        if forcedColor is not None:
+            if forcedEndTime is not None and time() > forcedEndTime:
+                forcedColor = None
+                continue
+            pixels = [forcedColor for _ in range(TOTAL_PIXELS)]
+            showPixels(strip, pixels)
+        else:
+            if roundEndTime is not None and time() > roundEndTime:
+                continue
+            pixels = idleAnimation()
+            animateTables(pixels)
+            showPixels(strip, pixels)
         sleep(0.01)
 
 app = flask.Flask(__name__)
 
+def reprColor(c):
+    return "#{:02x}{:02x}{:02x}".format(c.r, c.g, c.b)
+
 @app.route('/status', methods=['GET'])
 def status():
-    return flask.jsonify([state.getAnimation().name for state in table_states])
+    rep = {}
+    rep["config"] = {"tableSize": TABLE_SIZE, "numbTables": NUMB_TABLES, "ledBrightness": LED_BRIGHTNESS, "tableMaxCurrent": TABLE_MAX_CURRENT}
+    if forcedColor is None:
+        rep["forced"] = None
+    else:
+        rep["forced"] = {"color": reprColor(forcedColor), "remainingForcedTime": max(0, forcedEndTime - time()) if forcedEndTime is not None else None}
+    rep["tables"] = [state.getAnimation().name for state in table_states]
+    rep["remainingRoundTime"] = max(0, roundEndTime - time()) if roundEndTime is not None else None
+    return flask.jsonify(rep)
 
 @app.route('/flag', methods=['POST'])
 def flag():
@@ -140,8 +161,33 @@ def box_pwned():
     table_states[body["table"]] = TableState(Animation.PWNED)
     return 'OK'
 
+@app.route('/round', methods=['POST'])
+def round():
+    global table_states, roundEndTime, forcedColor
+    body = flask.request.get_json()
+    if "duration" in body:
+        roundEndTime = time() + body["duration"]*60
+    else:
+        roundEndTime = None
+    table_states = [TableState(Animation.IDLE) for _ in range(NUMB_TABLES)]
+    forcedColor = None
+    return 'OK'
+
+@app.route('/forceColor', methods=['POST'])
+def forceColor():
+    global forcedColor, forcedEndTime
+    body = flask.request.get_json()
+    forcedColor = Color(int(body["color"][1:3], 16), int(body["color"][3:5], 16), int(body["color"][5:7], 16))
+    if "duration" in body:
+        forcedEndTime = time() + body["duration"]*60
+    else:
+        forcedEndTime = None
+    return 'OK'
+
 if __name__ == '__main__':
     table_states = [TableState(Animation.IDLE) for _ in range(NUMB_TABLES)]
+    roundEndTime = None
+    forcedColor, forcedEndTime = None, None
 
     thread = Thread(target=stripControl)
     thread.start()
