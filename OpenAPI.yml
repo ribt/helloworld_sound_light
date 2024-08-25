@@ -3,16 +3,14 @@ info:
   title: LumRPi API
   version: 1.0.0
 servers:
-  - url: http://{{base_url}}
+  - url: http://lumrpi.local
 paths:
   /status:
     get:
       tags:
         - default
       summary: Get status
-      description: >-
-        Récupère le statut de toutes les tables (animation en cours ou non) et
-        les infos sur le round en cours
+      description: Récupère la config, les animations en cours sur les tables, etc.
       responses:
         '200':
           description: Successful response
@@ -24,8 +22,8 @@ paths:
         - default
       summary: Jouer flag
       description: >-
-        Jouer le son "L'équipe n°X vient de marquer X points." et allumer le
-        bandeau de l'équipe en vert.
+        Joue un petit son et allume progressivement le bandeau de l'équipe en
+        vert.
       requestBody:
         content:
           application/json:
@@ -33,7 +31,6 @@ paths:
               type: object
               example:
                 table: 1
-                points: 20
       responses:
         '200':
           description: Successful response
@@ -45,15 +42,15 @@ paths:
         - default
       summary: Pwn box
       description: >-
-        Jouer le son "L'équipe n°X vient pwn la box !", allumer le bandeau de
-        l'équipe en vert et les autres en rouge.
+        Jouer le son "L'équipe n°X vient pwn la box !", le bandeau passe en mode
+        arc-en-ciel pour le reste du round.
       requestBody:
         content:
           application/json:
             schema:
               type: object
               example:
-                table: 1
+                table: 0
       responses:
         '200':
           description: Successful response
@@ -67,16 +64,21 @@ paths:
       description: >-
         - Jouer le son "Début du round n°X"
             
-        - Faire une animation de début de round
+        - Faire une animation de début de round sur le bandeau de la salle
             
-        - Prévenir (animation + son) quand il reste 5 min
+        - Reset l'état de toutes les tables pour revenir à l'animation au repos
+        (vague rose)
             
-        - Prévenir (animation + son) quand il reste 1 min
+        - Prévenir (animation sur le bandeau de la salle + son) quand il reste 5
+        min
             
-        - Le paramètre _duration_ est la durée du round en minutes
+        - Prévenir (animation sur le bandeau de la salle + son) quand il reste 1
+        min
             
-        - Le paraètre _color_ est une couleur (en html hexa) qui définit la
-        couleur de l'animation "au repos" durant ce round.
+        - Le paramètre _duration_ est la durée du round en minutes, il est
+        facultatif.
+            
+        - A la fin du round, le bandeau est freeze (plus de changement de pixel)
       requestBody:
         content:
           application/json:
@@ -84,7 +86,28 @@ paths:
               type: object
               example:
                 round: 1
-                duration: 30
+                duration: 1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /forceColor:
+    post:
+      tags:
+        - default
+      summary: Forcer couleur
+      description: >-
+        Forcer la couleur de toutes les tables (#000000 permet d'éteindre le
+        bandeau). Si une durée (en minutes) est précisée, les animations
+        reprennent une fois le temps écoulé.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                duration: 1
                 color: '#ff0000'
       responses:
         '200':
