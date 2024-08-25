@@ -6,6 +6,8 @@ from rpi_ws281x import PixelStrip, Color
 from enum import Enum
 from constants import *
 from threading import Thread
+from queue import Queue
+import os
 
 MAIN_COLOR = Color(*MAIN_COLOR)
 TOTAL_PIXELS = NUMB_TABLES * TABLE_SIZE
@@ -130,6 +132,17 @@ def stripControl():
             showPixels(strip, pixels)
         sleep(0.01)
 
+def waitAndAddSoundToQueue(duration, soundFile):
+    if duration < 0:
+        return
+    sleep(duration)
+    sounds_queue.put(soundFile)
+
+def playSoundsInQueue():
+    while True:
+        soundFile = "./sounds/" + sounds_queue.get()
+        os.system("aplay " + soundFile)
+
 app = flask.Flask(__name__)
 
 def reprColor(c):
@@ -158,7 +171,8 @@ def flag():
 def box_pwned():
     global table_states
     body = flask.request.get_json()
-    table_states[body["table"]] = TableState(Animation.PWNED)
+    table_states[body["table"]-1] = TableState(Animation.PWNED)
+    sounds_queue.put(f"team_pwn_box/{body['table']}.wav")
     return 'OK'
 
 @app.route('/round', methods=['POST'])
@@ -171,6 +185,10 @@ def round():
         roundEndTime = None
     table_states = [TableState(Animation.IDLE) for _ in range(NUMB_TABLES)]
     forcedColor = None
+    sounds_queue.put(f"rounds/{body['round']}.wav")
+    Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 5*60, "remaining_time/5m.wav")).start()
+    Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 1*60, "remaining_time/1m.wav")).start()
+    Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60, "remaining_time/over.wav")).start()
     return 'OK'
 
 @app.route('/forceColor', methods=['POST'])
@@ -188,7 +206,8 @@ if __name__ == '__main__':
     table_states = [TableState(Animation.IDLE) for _ in range(NUMB_TABLES)]
     roundEndTime = None
     forcedColor, forcedEndTime = None, None
+    sounds_queue = Queue()
 
-    thread = Thread(target=stripControl)
-    thread.start()
+    Thread(target=stripControl).start()
+    Thread(target=playSoundsInQueue).start()
     app.run(debug=False, host='0.0.0.0', port=80)
