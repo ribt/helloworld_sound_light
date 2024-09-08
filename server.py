@@ -141,7 +141,7 @@ def waitAndAddSoundToQueue(duration, soundFile):
 def playSoundsInQueue():
     while True:
         soundFile = "./sounds/" + sounds_queue.get()
-        os.system("aplay " + soundFile)
+        os.system("sudo -u pi XDG_RUNTIME_DIR=/run/user/1000 aplay " + soundFile)
 
 app = flask.Flask(__name__)
 

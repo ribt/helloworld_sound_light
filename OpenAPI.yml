@@ -24,6 +24,9 @@ paths:
       description: >-
         Joue un petit son et allume progressivement le bandeau de l'équipe en
         vert.
+
+
+        Le paramètre table est un entier entre 1 et 18.
       requestBody:
         content:
           application/json:
@@ -42,15 +45,18 @@ paths:
         - default
       summary: Pwn box
       description: >-
-        Jouer le son "L'équipe n°X vient pwn la box !", le bandeau passe en mode
-        arc-en-ciel pour le reste du round.
+        Jouer le son "Team number XX just pwned the box!", le bandeau passe en
+        mode arc-en-ciel pour le reste du round.
+
+
+        Le paramètre table est un entier entre 1 et 18.
       requestBody:
         content:
           application/json:
             schema:
               type: object
               example:
-                table: 0
+                table: 1
       responses:
         '200':
           description: Successful response
@@ -62,7 +68,10 @@ paths:
         - default
       summary: Démarrer un round
       description: >-
-        - Jouer le son "Début du round n°X"
+        - Jouer le son "Let's go for round number XX"
+            
+        - Le paramère round peut contenir un chiffre (1, 2 ou 3) ou le texte
+        "final" pour la finale
             
         - Faire une animation de début de round sur le bandeau de la salle
             
@@ -78,7 +87,13 @@ paths:
         - Le paramètre _duration_ est la durée du round en minutes, il est
         facultatif.
             
-        - A la fin du round, le bandeau est freeze (plus de changement de pixel)
+        - A la fin du round, jouer le son "The round is over" et le bandeau est
+        freeze (plus de changement de pixel)
+            
+
+        Attention : Appeler cet endpoint planifie des animations dans le futur
+        qui ne peuvent pas être annulées. Il est très fortement déconseillé de
+        déclencher un nouveau round avant la fin du précédent.
       requestBody:
         content:
           application/json:
@@ -86,7 +101,7 @@ paths:
               type: object
               example:
                 round: 1
-                duration: 1
+                duration: 6
       responses:
         '200':
           description: Successful response
@@ -100,7 +115,16 @@ paths:
       description: >-
         Forcer la couleur de toutes les tables (#000000 permet d'éteindre le
         bandeau). Si une durée (en minutes) est précisée, les animations
-        reprennent une fois le temps écoulé.
+        reprennent une fois le temps écoulé (sauf si le round est terminé).
+
+
+        En mode forcé, il n'y a plus aucune animation sur le bandeau mais il y a
+        encore les animations sonores. Il faut démarrer un nouveau round sortir
+        du mode forcé.
+
+
+        Le but de cet endpoint est d'être appelé en dehors des rounds pour
+        éclairer la salle.
       requestBody:
         content:
           application/json:
@@ -108,7 +132,7 @@ paths:
               type: object
               example:
                 duration: 1
-                color: '#ff0000'
+                color: '#000000'
       responses:
         '200':
           description: Successful response
