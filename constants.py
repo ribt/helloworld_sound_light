@@ -15,4 +15,11 @@ LED_CHANNEL = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 PIXEL_MAX_CURRENT = 0.006 # 6mA
 TABLE_MAX_CURRENT = 1 # 1A
 
+#### Slave conf
 IS_SLAVE = True
+SLAVE_BASE_URL = None
+
+#### Master conf
+IS_SLAVE = False
+SLAVE_BASE_URL = "http://192.168.1.26/"
+MASTER_NUMB_TABLES = 10

@@ -165,9 +165,12 @@ def flag():
     body = flask.request.get_json()
     if not isinstance(body["table"], int) or body["table"] < 1 or body["table"] > NUMB_TABLES:
         return "Invalid table number", 400
-    table_states[body["table"]-1] = TableState(Animation.FLAG)
     if not IS_SLAVE:
         sounds_queue.put(f"flag.wav")
+    if SLAVE_BASE_URL and body["table"] > MASTER_NUMB_TABLES:
+        request.post(SLAVE_BASE_URL + "flag", json={"table": body["table"] - MASTER_NUMB_TABLES})
+    else:
+        table_states[body["table"]-1] = TableState(Animation.FLAG)
     return 'OK'
 
 @app.route('/box', methods=['POST'])
@@ -176,9 +179,12 @@ def box_pwned():
     body = flask.request.get_json()
     if not isinstance(body["table"], int) or body["table"] < 1 or body["table"] > NUMB_TABLES:
         return f"Invalid table number (must be between 1 and {NUMB_TABLES})", 400
-    table_states[body["table"]-1] = TableState(Animation.PWNED)
     if not IS_SLAVE:
         sounds_queue.put(f"team_pwn_box/{body['table']}.wav")
+    if SLAVE_BASE_URL and body["table"] > MASTER_NUMB_TABLES:
+        request.post(SLAVE_BASE_URL + "box", json={"table": body["table"] - MASTER_NUMB_TABLES})
+    else:
+        table_states[body["table"]-1] = TableState(Animation.PWNED)
     return 'OK'
 
 @app.route('/round', methods=['POST'])
@@ -200,6 +206,8 @@ def round():
         Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 5*60, "remaining_time/5m.wav")).start()
         Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 1*60, "remaining_time/1m.wav")).start()
         Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60, "remaining_time/over.wav")).start()
+    if SLAVE_BASE_URL:
+        request.post(SLAVE_BASE_URL + "round", json={"round": body["round"], "duration": body["duration"]})
     return 'OK'
 
 @app.route('/forceColor', methods=['POST'])
@@ -215,6 +223,8 @@ def forceColor():
         forcedEndTime = time() + body["duration"]*60
     else:
         forcedEndTime = None
+    if SLAVE_BASE_URL:
+        request.post(SLAVE_BASE_URL + "forceColor", json={"color": body["color"], "duration": body["duration"]})
     return 'OK'
 
 if __name__ == '__main__':
