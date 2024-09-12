@@ -163,13 +163,17 @@ def status():
 def flag():
     global table_states
     body = flask.request.get_json()
-    table_states[body["table"]] = TableState(Animation.FLAG)
+    if not isinstance(body["table"], int) or body["table"] < 1 or body["table"] > NUMB_TABLES:
+        return "Invalid table number", 400
+    table_states[body["table"]-1] = TableState(Animation.FLAG)
     return 'OK'
 
 @app.route('/box', methods=['POST'])
 def box_pwned():
     global table_states
     body = flask.request.get_json()
+    if not isinstance(body["table"], int) or body["table"] < 1 or body["table"] > NUMB_TABLES:
+        return f"Invalid table number (must be between 1 and {NUMB_TABLES})", 400
     table_states[body["table"]-1] = TableState(Animation.PWNED)
     sounds_queue.put(f"team_pwn_box/{body['table']}.wav")
     return 'OK'
@@ -178,7 +182,11 @@ def box_pwned():
 def round():
     global table_states, roundEndTime, forcedColor
     body = flask.request.get_json()
+    if not isinstance(body["round"], int) or body["round"] < 1 or body["round"] > 4:
+        return f"Invalid round number (must be between 1 and 4)", 400
     if "duration" in body:
+        if not isinstance(body["duration"], int) or body["duration"] < 1:
+            return f"Invalid duration (must be a positive integer)", 400
         roundEndTime = time() + body["duration"]*60
     else:
         roundEndTime = None
@@ -194,8 +202,12 @@ def round():
 def forceColor():
     global forcedColor, forcedEndTime
     body = flask.request.get_json()
+    if not isinstance(body["color"], str) or len(body["color"]) != 7 or body["color"][0] != '#' or not all(c in "0123456789ABCDEF" for c in body["color"][1:]):
+        return f"Invalid color (must be a string of the form '#RRGGBB')", 400
     forcedColor = Color(int(body["color"][1:3], 16), int(body["color"][3:5], 16), int(body["color"][5:7], 16))
     if "duration" in body:
+        if not isinstance(body["duration"], int) or body["duration"] < 1:
+            return f"Invalid duration (must be a positive integer)", 400
         forcedEndTime = time() + body["duration"]*60
     else:
         forcedEndTime = None
