@@ -1,0 +1,13 @@
+[Unit]
+Description=Service pour lancer server.py via Pipenv
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/helloworld_sound_light
+ExecStart=/home/pi/helloworld_sound_light/launch.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

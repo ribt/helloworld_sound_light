@@ -11,8 +11,7 @@ sudo apt install git pipenv
 cd
 git clone https://github.com/ribt/helloworld_sound_light
 cd helloworld_sound_light
-pipenv shell
-alias python3="sudo $(which python3)"
+pipenv run pip install flask rpi-ws281x
 ```
 
 Brancher GND et 5V du bandeau sur GND et 5V de la RPi. Brancher le fil de donnée sur le GPIO18.
@@ -20,5 +19,5 @@ Brancher GND et 5V du bandeau sur GND et 5V de la RPi. Brancher le fil de donné
 ## Test
 
 ```
-python3 strandtest.py
+sudo $(pipenv --py) strandtest.py
 ```
