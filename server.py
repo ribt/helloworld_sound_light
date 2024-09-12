@@ -1,4 +1,3 @@
-import yaml
 from time import sleep, time
 from random import randint
 import flask

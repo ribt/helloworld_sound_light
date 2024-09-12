@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 rpi-ws281x = "*"
 flask = "*"
-pyyaml = "*"
 
 [dev-packages]
 
