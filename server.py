@@ -166,6 +166,8 @@ def flag():
     if not isinstance(body["table"], int) or body["table"] < 1 or body["table"] > NUMB_TABLES:
         return "Invalid table number", 400
     table_states[body["table"]-1] = TableState(Animation.FLAG)
+    if not IS_SLAVE:
+        sounds_queue.put(f"flag.wav")
     return 'OK'
 
 @app.route('/box', methods=['POST'])
