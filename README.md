@@ -11,7 +11,6 @@ sudo apt install git
 cd
 git clone https://github.com/ribt/helloworld_sound_light
 cd helloworld_sound_light
-chmod +x install.sh
 ./install.sh
 ```
 

@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=pi
 WorkingDirectory=/home/pi/helloworld_sound_light
-ExecStart=/bin/bash /home/pi/helloworld_sound_light/launch.sh
+ExecStart=/home/pi/helloworld_sound_light/launch.sh
 Restart=always
 RestartSec=5
 
