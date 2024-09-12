@@ -175,7 +175,8 @@ def box_pwned():
     if not isinstance(body["table"], int) or body["table"] < 1 or body["table"] > NUMB_TABLES:
         return f"Invalid table number (must be between 1 and {NUMB_TABLES})", 400
     table_states[body["table"]-1] = TableState(Animation.PWNED)
-    sounds_queue.put(f"team_pwn_box/{body['table']}.wav")
+    if not IS_SLAVE:
+        sounds_queue.put(f"team_pwn_box/{body['table']}.wav")
     return 'OK'
 
 @app.route('/round', methods=['POST'])
@@ -192,10 +193,11 @@ def round():
         roundEndTime = None
     table_states = [TableState(Animation.IDLE) for _ in range(NUMB_TABLES)]
     forcedColor = None
-    sounds_queue.put(f"rounds/{body['round']}.wav")
-    Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 5*60, "remaining_time/5m.wav")).start()
-    Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 1*60, "remaining_time/1m.wav")).start()
-    Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60, "remaining_time/over.wav")).start()
+    if not IS_SLAVE:
+        sounds_queue.put(f"rounds/{body['round']}.wav")
+        Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 5*60, "remaining_time/5m.wav")).start()
+        Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 1*60, "remaining_time/1m.wav")).start()
+        Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60, "remaining_time/over.wav")).start()
     return 'OK'
 
 @app.route('/forceColor', methods=['POST'])
