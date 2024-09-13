@@ -119,6 +119,8 @@ def showBigstripPixels(strip, pixels):
 
 def tablesStripControl():
     global forcedColor
+
+    sleep(1) # don't know why but we need to initiate big strip first and then wait a bit before initiating tables strip
     
     tablesStrip = PixelStrip(
         TOTAL_PIXELS,   
