@@ -177,7 +177,7 @@ def bigStripControl():
                 continue
             if roundEndTime is not None:
                 remainingPixels = min(BIGSTRIP_SIZE, int(roundEndTime - time()))
-                pixels = [Color(255, 0, 0) if i < remainingPixels - BIGSTRIP_SIZE else Color(255, 255, 255) for i in range(BIGSTRIP_SIZE)]
+                pixels = [Color(255, 0, 0) if i < BIGSTRIP_SIZE - remainingPixels else Color(255, 255, 255) for i in range(BIGSTRIP_SIZE)]
                 showBigstripPixels(bigStrip, pixels)
         sleep(0.01)
 
