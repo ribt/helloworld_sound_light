@@ -146,9 +146,11 @@ def tablesStripControl():
             showTablesPixels(tablesStrip, pixels)
         sleep(0.01)
 
-def bigStripControl():   
+def bigStripControl():
+    global forcedColor
+
     bigStrip = PixelStrip(
-        BIGSTRIP_SIZE,   
+        BIGSTRIP_SIZE,
         BIGSTRIP_PIN,      # GPIO pin connected to the pixels (18 uses PWM, 10 uses SPI /dev/spidev0.0).
         800000,            # LED signal frequency in hertz (usually 800khz)
         10,                # DMA channel to use for generating signal (try 10)
@@ -260,7 +262,7 @@ def round():
 def forceColor():
     global forcedColor, forcedEndTime
     body = flask.request.get_json()
-    if not isinstance(body["color"], str) or len(body["color"]) != 7 or body["color"][0] != '#' or not all(c in "0123456789ABCDEF" for c in body["color"][1:]):
+    if not isinstance(body["color"], str) or len(body["color"]) != 7 or body["color"][0] != '#' or not all(c in "0123456789ABCDEF" for c in body["color"][1:].upper()):
         return f"Invalid color (must be a string of the form '#RRGGBB')", 400
     forcedColor = Color(int(body["color"][1:3], 16), int(body["color"][3:5], 16), int(body["color"][5:7], 16))
     if "duration" in body:
