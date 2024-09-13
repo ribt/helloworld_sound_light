@@ -76,7 +76,7 @@ def adaptBrightnessToMaxCurrent(pixels):
         estimated_current = 0
         tablePixels = pixels[table*TABLE_SIZE:(table+1)*TABLE_SIZE]
         for pixel in tablePixels:
-            estimated_current += (pixel.r + pixel.g + pixel.b) / (255*3) * PIXEL_MAX_CURRENT * LED_BRIGHTNESS/255
+            estimated_current += (pixel.r + pixel.g + pixel.b) / (255*3) * PIXEL_MAX_CURRENT * TABLE_BRIGHTNESS/255
         if estimated_current > TABLE_MAX_CURRENT:
             ratio = TABLE_MAX_CURRENT / estimated_current
             for i in range(len(tablePixels)):
@@ -113,8 +113,17 @@ def showPixels(strip, pixels):
 
 def stripControl():
     global forcedColor
-    strip = PixelStrip(TOTAL_PIXELS, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-    strip.begin()
+    
+    tablesStrip = PixelStrip(
+        TOTAL_PIXELS,   
+        TABLE_STRIP_PIN,   # GPIO pin connected to the pixels (18 uses PWM, 10 uses SPI /dev/spidev0.0).
+        800000,            # LED signal frequency in hertz (usually 800khz)
+        10,                # DMA channel to use for generating signal (try 10)
+        False,             # True to invert the signal (when using NPN transistor level shift)
+        TABLE_BRIGHTNESS,  # Set to 0 for darkest and 255 for brightest
+        0                  # set to '1' for GPIOs 13, 19, 41, 45 or 53
+    )
+    tablesStrip.begin()
 
     while True:
         if forcedColor is not None:
@@ -122,13 +131,13 @@ def stripControl():
                 forcedColor = None
                 continue
             pixels = [forcedColor for _ in range(TOTAL_PIXELS)]
-            showPixels(strip, pixels)
+            showPixels(tablesStrip, pixels)
         else:
             if roundEndTime is not None and time() > roundEndTime:
                 continue
             pixels = idleAnimation()
             animateTables(pixels)
-            showPixels(strip, pixels)
+            showPixels(tablesStrip, pixels)
         sleep(0.01)
 
 def waitAndAddSoundToQueue(duration, soundFile):
@@ -150,7 +159,7 @@ def reprColor(c):
 @app.route('/status', methods=['GET'])
 def status():
     rep = {}
-    rep["config"] = {"tableSize": TABLE_SIZE, "numbTables": NUMB_TABLES, "ledBrightness": LED_BRIGHTNESS, "tableMaxCurrent": TABLE_MAX_CURRENT}
+    rep["config"] = {"tableSize": TABLE_SIZE, "numbTables": NUMB_TABLES, "ledBrightness": TABLE_BRIGHTNESS, "tableMaxCurrent": TABLE_MAX_CURRENT}
     if forcedColor is None:
         rep["forced"] = None
     else:
