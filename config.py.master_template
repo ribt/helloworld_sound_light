@@ -6,7 +6,7 @@ MAIN_COLOR = (199,21,133)
 TABLE_STRIP_PIN = 18          # GPIO pin connected to the pixels (18 uses PWM!).
 TABLE_BRIGHTNESS = 255 # Set to 0 for darkest and 255 for brightest
 
-BIGSTRIP_PIN = 10
+BIGSTRIP_PIN = 19
 BIGSTRIP_SIZE = 160
 
 PIXEL_MAX_CURRENT = 0.006 # 6mA

@@ -127,7 +127,7 @@ def tablesStripControl():
         10,                # DMA channel to use for generating signal (try 10)
         False,             # True to invert the signal (when using NPN transistor level shift)
         TABLE_BRIGHTNESS,  # Set to 0 for darkest and 255 for brightest
-        0                  # set to '1' for GPIOs 13, 19, 41, 45 or 53
+        1 if TABLE_STRIP_PIN in [13, 19, 41, 45 or 53] else 0
     )
     tablesStrip.begin()
 
@@ -156,9 +156,12 @@ def bigStripControl():
         10,                # DMA channel to use for generating signal (try 10)
         False,             # True to invert the signal (when using NPN transistor level shift)
         255,               # Set to 0 for darkest and 255 for brightest
-        0                  # set to '1' for GPIOs 13, 19, 41, 45 or 53
+        1 if BIGSTRIP_PIN in [13, 19, 41, 45 or 53] else 0
     )
     bigStrip.begin()
+
+    pixels = [Color(255, 255, 255) for _ in range(BIGSTRIP_SIZE)]
+    showBigstripPixels(bigStrip, pixels)
 
     while True:
         if forcedColor is not None:
@@ -172,7 +175,7 @@ def bigStripControl():
                 continue
             if roundEndTime is not None:
                 remainingPixels = min(BIGSTRIP_SIZE, int(roundEndTime - time()))
-                pixels = [Color(255, 0, 0)] * (BIGSTRIP_SIZE - remainingPixels) + [Color(255, 255, 255)] * remainingPixels
+                pixels = [Color(255, 0, 0) if i < remainingPixels - BIGSTRIP_SIZE else Color(255, 255, 255) for i in range(BIGSTRIP_SIZE)]
                 showBigstripPixels(bigStrip, pixels)
         sleep(0.01)
 
