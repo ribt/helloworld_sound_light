@@ -4,7 +4,7 @@ sudo apt update
 sudo apt install -y python3-pip pipenv
 
 pipenv install
-pipenv run pip install flask rpi-ws281x
+pipenv run pip install flask rpi-ws281x requests
 
 sudo ln -s /home/pi/helloworld_sound_light/lumrpi.service /etc/systemd/system/lumrpi.service
 

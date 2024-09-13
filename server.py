@@ -178,7 +178,8 @@ def flag():
     if not IS_SLAVE:
         sounds_queue.put(f"flag.wav")
     if SLAVE_BASE_URL and body["table"] > MASTER_NUMB_TABLES:
-        requests.post(SLAVE_BASE_URL + "flag", json={"table": body["table"] - MASTER_NUMB_TABLES})
+        try: requests.post(SLAVE_BASE_URL + "flag", json={"table": body["table"] - MASTER_NUMB_TABLES})
+        except: print("Warning: Slave is not reachable")
     else:
         table_states[body["table"]-1] = TableState(Animation.FLAG)
     return 'OK'
@@ -192,7 +193,8 @@ def box_pwned():
     if not IS_SLAVE:
         sounds_queue.put(f"team_pwn_box/{body['table']}.wav")
     if SLAVE_BASE_URL and body["table"] > MASTER_NUMB_TABLES:
-        requests.post(SLAVE_BASE_URL + "box", json={"table": body["table"] - MASTER_NUMB_TABLES})
+        try: requests.post(SLAVE_BASE_URL + "box", json={"table": body["table"] - MASTER_NUMB_TABLES})
+        except: print("Warning: Slave is not reachable")
     else:
         table_states[body["table"]-1] = TableState(Animation.PWNED)
     return 'OK'
@@ -217,7 +219,8 @@ def round():
         Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 1*60, "remaining_time/1m.wav")).start()
         Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60, "remaining_time/over.wav")).start()
     if SLAVE_BASE_URL:
-        requests.post(SLAVE_BASE_URL + "round", json={"round": body["round"], "duration": body["duration"]})
+        try: requests.post(SLAVE_BASE_URL + "round", json={"round": body["round"], "duration": body["duration"]})
+        except: print("Warning: Slave is not reachable")
     return 'OK'
 
 @app.route('/forceColor', methods=['POST'])
@@ -234,7 +237,8 @@ def forceColor():
     else:
         forcedEndTime = None
     if SLAVE_BASE_URL:
-        requests.post(SLAVE_BASE_URL + "forceColor", json={"color": body["color"], "duration": body["duration"]})
+        try: requests.post(SLAVE_BASE_URL + "forceColor", json={"color": body["color"], "duration": body["duration"]})
+        except: print("Warning: Slave is not reachable")
     return 'OK'
 
 if __name__ == '__main__':
