@@ -3,7 +3,7 @@ from random import randint
 import flask
 from rpi_ws281x import PixelStrip, Color
 from enum import Enum
-from constants import *
+from config import *
 from threading import Thread
 from queue import Queue
 import os
@@ -175,7 +175,7 @@ def flag():
     body = flask.request.get_json()
     if not isinstance(body["table"], int) or body["table"] < 1 or body["table"] > NUMB_TABLES:
         return "Invalid table number", 400
-    if not IS_SLAVE:
+    if IS_MASTER:
         sounds_queue.put(f"flag.wav")
     if SLAVE_BASE_URL and body["table"] > MASTER_NUMB_TABLES:
         try: requests.post(SLAVE_BASE_URL + "flag", json={"table": body["table"] - MASTER_NUMB_TABLES})
@@ -190,7 +190,7 @@ def box_pwned():
     body = flask.request.get_json()
     if not isinstance(body["table"], int) or body["table"] < 1 or body["table"] > NUMB_TABLES:
         return f"Invalid table number (must be between 1 and {NUMB_TABLES})", 400
-    if not IS_SLAVE:
+    if IS_MASTER:
         sounds_queue.put(f"team_pwn_box/{body['table']}.wav")
     if SLAVE_BASE_URL and body["table"] > MASTER_NUMB_TABLES:
         try: requests.post(SLAVE_BASE_URL + "box", json={"table": body["table"] - MASTER_NUMB_TABLES})
@@ -213,7 +213,7 @@ def round():
         roundEndTime = None
     table_states = [TableState(Animation.IDLE) for _ in range(NUMB_TABLES)]
     forcedColor = None
-    if not IS_SLAVE:
+    if IS_MASTER:
         sounds_queue.put(f"rounds/{body['round']}.wav")
         Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 5*60, "remaining_time/5m.wav")).start()
         Thread(target=waitAndAddSoundToQueue, args=(body["duration"]*60 - 1*60, "remaining_time/1m.wav")).start()
