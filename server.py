@@ -56,9 +56,9 @@ def rainbow(colors=[wheel(i) for i in range(256)]):
     return [colors[(i*step)%256] for i in range(TABLE_SIZE)]
 
 def flag_anim(tick):
-    if tick >= TABLE_SIZE * 5:
+    if tick >= TABLE_SIZE * 2:
         return None
-    pixels = [Color(0, 255, 0) for _ in range(tick//5)] + [Color(0, 0, 0) for _ in range(TABLE_SIZE - tick//5)]
+    pixels = [Color(0, 255, 0) for _ in range(tick//2)] + [Color(0, 0, 0) for _ in range(TABLE_SIZE - tick//2)]
     return pixels
 
 def computeTablePixels(state: TableState, reverse=False):
@@ -243,8 +243,8 @@ def box_pwned():
 def round():
     global table_states, roundEndTime, forcedColor
     body = flask.request.get_json()
-    if not isinstance(body["round"], int) or body["round"] < 1 or body["round"] > 4:
-        return f"Invalid round number (must be between 1 and 4)", 400
+    if not "round" in body or body["round"] not in [1, 2, 3, 4, "final"]:
+        return f"Invalid round (must be a number between 1 and 4 or 'final')", 400
     if "duration" in body:
         if not isinstance(body["duration"], int) or body["duration"] < 1:
             return f"Invalid duration (must be a positive integer)", 400
