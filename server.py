@@ -106,10 +106,14 @@ def animateTables(pixels):
         for i in range(TABLE_SIZE):
             pixels[table*TABLE_SIZE+i] = tablePixels[i]
 
-def showPixels(strip, pixels, bypassCurrentCheck=False):
-    if not bypassCurrentCheck:
-        adaptBrightnessToMaxCurrent(pixels)
+def showTablesPixels(strip, pixels):
+    adaptBrightnessToMaxCurrent(pixels)
     for i in range(TOTAL_PIXELS):
+        strip.setPixelColor(i, pixels[i])
+    strip.show()
+
+def showBigstripPixels(strip, pixels):
+    for i in range(BIGSTRIP_SIZE):
         strip.setPixelColor(i, pixels[i])
     strip.show()
 
@@ -133,13 +137,13 @@ def tablesStripControl():
                 forcedColor = None
                 continue
             pixels = [forcedColor for _ in range(TOTAL_PIXELS)]
-            showPixels(tablesStrip, pixels)
+            showTablesPixels(tablesStrip, pixels)
         else:
             if roundEndTime is not None and time() > roundEndTime:
                 continue
             pixels = idleAnimation()
             animateTables(pixels)
-            showPixels(tablesStrip, pixels)
+            showTablesPixels(tablesStrip, pixels)
         sleep(0.01)
 
 def bigStripControl():   
@@ -160,14 +164,14 @@ def bigStripControl():
                 forcedColor = None
                 continue
             pixels = [forcedColor for _ in range(BIGSTRIP_SIZE)]
-            showPixels(bigStrip, pixels, bypassCurrentCheck=True)
+            showBigstripPixels(bigStrip, pixels)
         else:
             if roundEndTime is not None and time() > roundEndTime:
                 continue
             if roundEndTime is not None:
                 remainingPixels = min(BIGSTRIP_SIZE, int(roundEndTime - time()))
                 pixels = [Color(255, 0, 0)] * (BIGSTRIP_SIZE - remainingPixels) + [Color(255, 255, 255)] * remainingPixels
-                showPixels(bigStrip, pixels, bypassCurrentCheck=True)
+                showBigstripPixels(bigStrip, pixels)
         sleep(0.01)
 
 def waitAndAddSoundToQueue(duration, soundFile):
