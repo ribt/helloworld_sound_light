@@ -106,13 +106,14 @@ def animateTables(pixels):
         for i in range(TABLE_SIZE):
             pixels[table*TABLE_SIZE+i] = tablePixels[i]
 
-def showPixels(strip, pixels):
-    adaptBrightnessToMaxCurrent(pixels)
+def showPixels(strip, pixels, bypassCurrentCheck=False):
+    if not bypassCurrentCheck:
+        adaptBrightnessToMaxCurrent(pixels)
     for i in range(TOTAL_PIXELS):
         strip.setPixelColor(i, pixels[i])
     strip.show()
 
-def stripControl():
+def tablesStripControl():
     global forcedColor
     
     tablesStrip = PixelStrip(
@@ -139,6 +140,34 @@ def stripControl():
             pixels = idleAnimation()
             animateTables(pixels)
             showPixels(tablesStrip, pixels)
+        sleep(0.01)
+
+def bigStripControl():   
+    bigStrip = PixelStrip(
+        BIGSTRIP_SIZE,   
+        BIGSTRIP_PIN,      # GPIO pin connected to the pixels (18 uses PWM, 10 uses SPI /dev/spidev0.0).
+        800000,            # LED signal frequency in hertz (usually 800khz)
+        10,                # DMA channel to use for generating signal (try 10)
+        False,             # True to invert the signal (when using NPN transistor level shift)
+        255,               # Set to 0 for darkest and 255 for brightest
+        0                  # set to '1' for GPIOs 13, 19, 41, 45 or 53
+    )
+    bigStrip.begin()
+
+    while True:
+        if forcedColor is not None:
+            if forcedEndTime is not None and time() > forcedEndTime:
+                forcedColor = None
+                continue
+            pixels = [forcedColor for _ in range(BIGSTRIP_SIZE)]
+            showPixels(bigStrip, pixels, bypassCurrentCheck=True)
+        else:
+            if roundEndTime is not None and time() > roundEndTime:
+                continue
+            if roundEndTime is not None:
+                remainingPixels = min(BIGSTRIP_SIZE, int(roundEndTime - time()))
+                pixels = [Color(255, 0, 0)] * (BIGSTRIP_SIZE - remainingPixels) + [Color(255, 255, 255)] * remainingPixels
+                showPixels(bigStrip, pixels, bypassCurrentCheck=True)
         sleep(0.01)
 
 def waitAndAddSoundToQueue(duration, soundFile):
@@ -247,6 +276,9 @@ if __name__ == '__main__':
     forcedColor, forcedEndTime = None, None
     sounds_queue = Queue()
 
-    Thread(target=stripControl).start()
-    Thread(target=playSoundsInQueue).start()
+    Thread(target=tablesStripControl).start()
+    if IS_MASTER:
+        Thread(target=bigStripControl).start()
+        Thread(target=playSoundsInQueue).start()
+
     app.run(debug=False, host='0.0.0.0', port=80)
