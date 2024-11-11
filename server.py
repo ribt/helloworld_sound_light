@@ -281,6 +281,19 @@ def forceColor():
         except: print("Warning: Slave is not reachable")
     return 'OK'
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    # {"challenge": "Apprenti d\u00e9codeur", "category": "Cryptanalyse", "team": "Admin", "user": "gcc", "solve_id": 48}
+    body = flask.request.get_json()
+    try:
+        team_number = TEAMS.index(body["team"])
+        print(f"Team {body['team']} solved a challenge")
+    except ValueError:
+        print(f"Warning: Team {body['team']} not found")
+        return 'OK'
+    table_states[team_number] = TableState(Animation.FLAG)
+    return 'OK'
+
 if __name__ == '__main__':
     table_states = [TableState(Animation.IDLE) for _ in range(NUMB_TABLES)]
     roundEndTime = None
@@ -289,7 +302,7 @@ if __name__ == '__main__':
 
     Thread(target=tablesStripControl).start()
     if IS_MASTER:
-        Thread(target=bigStripControl).start()
+        # Thread(target=bigStripControl).start()
         Thread(target=playSoundsInQueue).start()
 
     app.run(debug=False, host='0.0.0.0', port=80)
