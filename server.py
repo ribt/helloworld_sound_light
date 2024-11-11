@@ -287,7 +287,6 @@ def webhook():
     body = flask.request.get_json()
     try:
         team_number = TEAMS.index(body["team"])
-        print(f"Team {body['team']} solved a challenge")
     except ValueError:
         print(f"Warning: Team {body['team']} not found")
         return 'OK'
